@@ -1,22 +1,30 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.SceneManagement; 
 
 public class MenuController : MonoBehaviour
 {
+    
     public void NuevaPartida()
     {
-        SceneManager.LoadScene("Juego");
+        
+        SceneManager.LoadScene("Juego"); 
     }
 
+    
     public void CargarPartida()
     {
-        Debug.Log("Cargar Partida: Funcionalidad pendiente...");
+        
+        Debug.Log("Funcionalidad de cargar partida pendiente.");
     }
 
-    public void Salir()
+    
+    public void SalirJuego()
     {
-        Application.Quit();
+        
         Debug.Log("Saliendo del juego...");
+        Application.Quit();
     }
 }
+
+
 
