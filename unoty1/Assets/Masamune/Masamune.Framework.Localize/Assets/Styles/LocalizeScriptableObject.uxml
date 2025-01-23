@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<engine:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:engine="UnityEngine.UIElements"
+    xmlns:editor="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd"
+>
+  <engine:Label text="English" class="box" />
+  <editor:BindableLocalizeLabel binding-path="text" class="box" style="font-size: 200%;padding: 10px;-unity-text-align: middle-center;" language="english" />
+  <engine:Label text="Chinese" class="box" />
+  <editor:BindableLocalizeLabel binding-path="text" class="box" style="font-size: 200%;padding: 10px;-unity-text-align: middle-center;" language="chinese" />
+  <engine:Label text="Japanese" class="box" />
+  <editor:BindableLocalizeLabel binding-path="text" class="box" style="font-size: 200%;padding: 10px;-unity-text-align: middle-center;" language="japanese" />
+  <editor:PropertyField binding-path="text" class="box" />
+  <engine:Div class="message">
+    <engine:Label text="Enter the ID in Localization.csv in the text and the letters will be translated in 3 languages." />
+    <engine:Label text="* By default,&quot;Hello&quot; and &quot;Thank you&quot; are included." />
+  </engine:Div>
+    
+</engine:UXML>
