@@ -1,135 +1,134 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class UnoManager : MonoBehaviour
 {
-    // Configuración general
-    public GameObject cartaBasePrefab; // Prefab de la carta base
+    public GameObject cartaBasePrefab; // Prefab base de la carta
     public Transform manoJugador;      // Contenedor de las cartas del jugador
-    public Transform pilaDescarte;    // Contenedor de la pila de descarte
+    public Transform pilaDescarte;     // Contenedor de la pila de descarte
     public string carpetaSprites = "SpritesCartas"; // Carpeta de los sprites en Resources
 
-    // Listas para manejar los sprites y las cartas
-    private List<Sprite> spritesCartas = new List<Sprite>();  // Sprites cargados
+    private List<Sprite> spritesCartas = new List<Sprite>(); // Sprites disponibles
     private List<GameObject> cartasMano = new List<GameObject>(); // Cartas en la mano
     private int cartaSeleccionada = 0; // Índice de la carta seleccionada
 
     void Start()
     {
-        // Cargar todos los sprites desde la carpeta
         CargarSprites();
-
-        // Generar 7 cartas iniciales
-        for (int i = 0; i < 7; i++)
+        if (spritesCartas.Count == 0 || cartaBasePrefab == null || manoJugador == null)
         {
-            GenerarCartaAleatoria();
+            Debug.LogError("Faltan referencias o no hay sprites disponibles.");
+            return;
         }
 
-        // Actualizar la selección inicial
+        GenerarCartasIniciales(7);
         ActualizarSeleccion();
     }
 
     void Update()
     {
-        // Navegar entre cartas con las flechas del teclado
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            cartaSeleccionada = (cartaSeleccionada + 1) % cartasMano.Count;
-            ActualizarSeleccion();
+            MoverSeleccion(1);
         }
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            cartaSeleccionada = (cartaSeleccionada - 1 + cartasMano.Count) % cartasMano.Count;
-            ActualizarSeleccion();
+            MoverSeleccion(-1);
         }
-
-        // Seleccionar carta y moverla a la pila de descarte
-        if (Input.GetKeyDown(KeyCode.Space))
+        else if (Input.GetKeyDown(KeyCode.Space))
         {
-            SeleccionarCarta();
+            DescartarCartaSeleccionada();
         }
     }
 
-    // Método para cargar los sprites de la carpeta
+    // Carga los sprites desde la carpeta en Resources
     void CargarSprites()
     {
-        Sprite[] cargados = Resources.LoadAll<Sprite>(carpetaSprites);
-
-        if (cargados.Length == 0)
-        {
-            Debug.LogError($"No se encontraron sprites en la carpeta '{carpetaSprites}'.");
-            return;
-        }
-
-        spritesCartas.AddRange(cargados);
-        Debug.Log($"Se cargaron {spritesCartas.Count} sprites.");
+        spritesCartas.AddRange(Resources.LoadAll<Sprite>(carpetaSprites));
+        if (spritesCartas.Count == 0)
+            Debug.LogError($"No se encontraron sprites en '{carpetaSprites}'");
     }
 
-    // Método para generar una carta aleatoria
+    // Genera una cantidad de cartas aleatorias
+    void GenerarCartasIniciales(int cantidad)
+    {
+        for (int i = 0; i < cantidad; i++)
+        {
+            GenerarCartaAleatoria();
+        }
+    }
+
+    // Genera una carta con un sprite aleatorio
     void GenerarCartaAleatoria()
     {
-        if (spritesCartas.Count == 0 || cartaBasePrefab == null || manoJugador == null)
-        {
-            Debug.LogError("Faltan referencias o sprites para generar cartas.");
-            return;
-        }
+        if (spritesCartas.Count == 0) return;
 
-        // Elegir un sprite aleatorio
-        int indice = Random.Range(0, spritesCartas.Count);
-        Sprite spriteAleatorio = spritesCartas[indice];
-
-        // Instanciar la carta base
+        Sprite spriteAleatorio = spritesCartas[Random.Range(0, spritesCartas.Count)];
         GameObject nuevaCarta = Instantiate(cartaBasePrefab, manoJugador);
-
-        // Configurar el sprite de la carta
-        Image cartaImagen = nuevaCarta.GetComponentInChildren<Image>();
-        if (cartaImagen != null)
-        {
-            cartaImagen.sprite = spriteAleatorio;
-        }
-
-        // Ajustar posición en la mano
-        nuevaCarta.transform.localPosition = new Vector3(cartasMano.Count * 1.5f, 0, 0);
+        AsignarSprite(nuevaCarta, spriteAleatorio);
         cartasMano.Add(nuevaCarta);
+        ReposicionarCartas();
     }
 
-    // Actualizar la visualización de la carta seleccionada
+    // Asigna el sprite y ajusta el orden de renderizado
+    void AsignarSprite(GameObject carta, Sprite sprite)
+    {
+        SpriteRenderer sr = carta.GetComponent<SpriteRenderer>();
+        if (sr)
+        {
+            sr.sprite = sprite;
+            sr.sortingOrder = 10; // Asegurar que la carta esté por encima del fondo
+        }
+        else
+        {
+            Debug.LogError("El prefab de la carta no tiene un componente SpriteRenderer.");
+        }
+    }
+
+    // Mueve la selección de la carta
+    void MoverSeleccion(int direccion)
+    {
+        if (cartasMano.Count == 0) return;
+        cartaSeleccionada = (cartaSeleccionada + direccion + cartasMano.Count) % cartasMano.Count;
+        ActualizarSeleccion();
+    }
+
+    // Actualiza la visualización de la carta seleccionada
     void ActualizarSeleccion()
     {
         for (int i = 0; i < cartasMano.Count; i++)
         {
-            var outline = cartasMano[i].GetComponentInChildren<Outline>();
-            if (outline != null)
-            {
-                outline.enabled = (i == cartaSeleccionada); // Activar outline si es la carta seleccionada
-            }
+            SpriteRenderer sr = cartasMano[i].GetComponent<SpriteRenderer>();
+            if (sr) sr.color = (i == cartaSeleccionada) ? Color.yellow : Color.white;
         }
     }
 
-    // Mover carta seleccionada a la pila de descarte
-    void SeleccionarCarta()
+    // Descarta la carta seleccionada
+    void DescartarCartaSeleccionada()
     {
         if (cartasMano.Count == 0) return;
 
-        // Obtener la carta seleccionada
         GameObject carta = cartasMano[cartaSeleccionada];
-
-        // Mover la carta a la pila de descarte
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
 
-        // Eliminar la carta de la mano
+        // Cambiar el sortingOrder para que la carta descartada esté arriba
+        SpriteRenderer sr = carta.GetComponent<SpriteRenderer>();
+        if (sr) sr.sortingOrder = 15;
+
         cartasMano.RemoveAt(cartaSeleccionada);
 
-        // Ajustar las posiciones de las cartas restantes
+        cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
+        ReposicionarCartas();
+        ActualizarSeleccion();
+    }
+
+    // Reposiciona las cartas en la mano
+    void ReposicionarCartas()
+    {
         for (int i = 0; i < cartasMano.Count; i++)
         {
             cartasMano[i].transform.localPosition = new Vector3(i * 1.5f, 0, 0);
         }
-
-        // Ajustar índice de selección
-        cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
-        ActualizarSeleccion();
     }
 }
