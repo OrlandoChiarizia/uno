@@ -41,6 +41,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: New Layer 1
+  - name: fondo
     uniqueID: 3948902979
+    locked: 0
+  - name: cartas
+    uniqueID: 1800567705
     locked: 0
