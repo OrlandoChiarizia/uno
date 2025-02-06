@@ -102,6 +102,14 @@ public class UnoManager : MonoBehaviour
         if (cartasMano.Count == 0) return;
 
         GameObject carta = cartasMano[cartaSeleccionada];
+        Carta cartaSeleccionadaScript = carta.GetComponent<Carta>();
+
+        if (cartaSeleccionadaScript == null || !EsCartaValida(cartaSeleccionadaScript))
+        {
+            Debug.LogError("¡La carta seleccionada no es válida para descartar!");
+            return;
+        }
+
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
 
@@ -118,6 +126,26 @@ public class UnoManager : MonoBehaviour
         ReorganizarCartasEnAbanico();
         cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
         ActualizarSeleccion();
+    }
+
+    bool EsCartaValida(Carta cartaSeleccionada)
+    {
+        // Si la pila de descarte está vacía, la primera carta puede ser cualquier carta
+        if (pilaDescarte.childCount == 0)
+            return true;
+
+        // La carta en la pila de descarte
+        GameObject cartaPila = pilaDescarte.GetChild(0).gameObject;
+        Carta cartaPilaScript = cartaPila.GetComponent<Carta>();
+
+        // Si la carta en la pila de descarte es un +4 (cambio de color), cualquier carta es válida
+        if (cartaPilaScript.numero == 0 && cartaPilaScript.color == ColorCarta.Ninguno)
+        {
+            return true;
+        }
+
+        // La carta es válida si coincide en color o número con la carta en la pila de descarte
+        return cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero;
     }
 
     void ReorganizarCartasEnAbanico()

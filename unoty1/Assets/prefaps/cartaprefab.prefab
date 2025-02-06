@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2611461002763561895}
   - component: {fileID: 7554404631339956832}
+  - component: {fileID: 4288790780352928282}
   m_Layer: 0
   m_Name: cartaprefab
   m_TagString: Untagged
@@ -84,3 +85,17 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &4288790780352928282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3710874695504061124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6379b54cff757eb41a3e08ab6e03d3e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numero: 0
+  color: 0
