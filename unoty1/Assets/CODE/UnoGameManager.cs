@@ -84,6 +84,14 @@ public class UnoManager : MonoBehaviour
             sr.sortingOrder = 20 + cartasMano.Count;
         }
 
+        // Asignar número y color a la carta
+        Carta cartaScript = nuevaCarta.GetComponent<Carta>();
+        if (cartaScript != null)
+        {
+            cartaScript.numero = Random.Range(0, 10); // Asignar un número aleatorio entre 0 y 9
+            cartaScript.color = (ColorCarta)Random.Range(0, 4); // Asignar un color aleatorio (Rojo, Verde, Azul, Amarillo)
+        }
+
         cartasMano.Add(nuevaCarta);
         ReorganizarCartasEnAbanico();
     }
@@ -138,6 +146,8 @@ public class UnoManager : MonoBehaviour
         GameObject cartaPila = pilaDescarte.GetChild(0).gameObject;
         Carta cartaPilaScript = cartaPila.GetComponent<Carta>();
 
+        Debug.Log("Carta pila: num col " + cartaPilaScript.numero + " " + cartaPilaScript.color);
+
         // Si la carta en la pila de descarte es un +4 (cambio de color), cualquier carta es válida
         if (cartaPilaScript.numero == 0 && cartaPilaScript.color == ColorCarta.Ninguno)
         {
@@ -145,7 +155,12 @@ public class UnoManager : MonoBehaviour
         }
 
         // La carta es válida si coincide en color o número con la carta en la pila de descarte
-        return cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero;
+        if (cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero)
+        {
+            return true;
+        }
+
+        return false; // Si no coincide en número ni en color, no es válida
     }
 
     void ReorganizarCartasEnAbanico()
