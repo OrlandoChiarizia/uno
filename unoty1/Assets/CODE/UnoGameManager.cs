@@ -84,6 +84,33 @@ public class UnoManager : MonoBehaviour
             sr.sortingOrder = 20 + cartasMano.Count;
         }
 
+        // Asignar número y color a la carta
+        Carta cartaScript = nuevaCarta.GetComponent<Carta>();
+        var cartaRenderer = nuevaCarta.GetComponent<SpriteRenderer>();
+        if (cartaScript != null)
+        {
+            string nombre_carta = cartaRenderer.sprite.name;
+            print(nombre_carta);
+
+            // Split the name into parts
+            string[] parts = nombre_carta.Split('_');
+
+            // Handle regular cards (Blue_9, Blue_Skip, etc.)
+            if (parts.Length == 2)
+            {
+                cartaScript.color = parts[0]; // The first part is the color (e.g., Blue)
+                cartaScript.numero = parts[1]; // The second part is the number or action (e.g., 9, Skip, Reverse)
+            }
+            // Handle special cards (Draw, Wild_Draw, etc.)
+            else if (parts.Length == 1)
+            {
+                // Special cards like Draw or Wild_Draw
+                cartaScript.color = null; // The whole part is the color (e.g., Draw, Wild_Draw)
+                cartaScript.numero = null; // No specific number or action, so set it to null or a default value
+            }
+        }
+
+
         cartasMano.Add(nuevaCarta);
         ReorganizarCartasEnAbanico();
     }
@@ -102,6 +129,14 @@ public class UnoManager : MonoBehaviour
         if (cartasMano.Count == 0) return;
 
         GameObject carta = cartasMano[cartaSeleccionada];
+        Carta cartaSeleccionadaScript = carta.GetComponent<Carta>();
+
+        if (cartaSeleccionadaScript == null || !EsCartaValida(cartaSeleccionadaScript))
+        {
+            Debug.Log("¡La carta seleccionada no es válida para descartar!");
+            return;
+        }
+
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
 
@@ -118,6 +153,36 @@ public class UnoManager : MonoBehaviour
         ReorganizarCartasEnAbanico();
         cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
         ActualizarSeleccion();
+    }
+
+    bool EsCartaValida(Carta cartaSeleccionada)
+    {
+        // Si la pila de descarte está vacía, la primera carta puede ser cualquier carta
+        if (pilaDescarte.childCount == 0)
+            return true;
+
+        // La carta en la pila de descarte
+        GameObject cartaPila = pilaDescarte.GetChild(pilaDescarte.childCount-1).gameObject;
+        Carta cartaPilaScript = cartaPila.GetComponent<Carta>();
+
+
+        if (string.IsNullOrEmpty(cartaPilaScript.numero) && string.IsNullOrEmpty(cartaPilaScript.color))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrEmpty(cartaSeleccionada.numero) && string.IsNullOrEmpty(cartaSeleccionada.color))
+        {
+            return true; // Las cartas especiales seleccionadas también son válidas
+        }
+
+        // La carta es válida si coincide en color o número con la carta en la pila de descarte
+        if (cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero)
+        {
+            return true;
+        }
+
+        return false; // Si no coincide en número ni en color, no es válida
     }
 
     void ReorganizarCartasEnAbanico()
