@@ -120,7 +120,7 @@ public class UnoManager : MonoBehaviour
         for (int i = 0; i < cartasMano.Count; i++)
         {
             SpriteRenderer sr = cartasMano[i].GetComponent<SpriteRenderer>();
-            sr.color = (i == cartaSeleccionada) ? Color.yellow : Color.white;
+            sr.color = (i == cartaSeleccionada) ? new Color(0.9f, 0.9f, 0.9f, 1f) : Color.white;
         }
     }
 
@@ -157,14 +157,11 @@ public class UnoManager : MonoBehaviour
 
     bool EsCartaValida(Carta cartaSeleccionada)
     {
-        // Si la pila de descarte está vacía, la primera carta puede ser cualquier carta
         if (pilaDescarte.childCount == 0)
             return true;
 
-        // La carta en la pila de descarte
-        GameObject cartaPila = pilaDescarte.GetChild(pilaDescarte.childCount-1).gameObject;
+        GameObject cartaPila = pilaDescarte.GetChild(pilaDescarte.childCount - 1).gameObject;
         Carta cartaPilaScript = cartaPila.GetComponent<Carta>();
-
 
         if (string.IsNullOrEmpty(cartaPilaScript.numero) && string.IsNullOrEmpty(cartaPilaScript.color))
         {
@@ -173,16 +170,10 @@ public class UnoManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(cartaSeleccionada.numero) && string.IsNullOrEmpty(cartaSeleccionada.color))
         {
-            return true; // Las cartas especiales seleccionadas también son válidas
-        }
-
-        // La carta es válida si coincide en color o número con la carta en la pila de descarte
-        if (cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero)
-        {
             return true;
         }
 
-        return false; // Si no coincide en número ni en color, no es válida
+        return cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero;
     }
 
     void ReorganizarCartasEnAbanico()
