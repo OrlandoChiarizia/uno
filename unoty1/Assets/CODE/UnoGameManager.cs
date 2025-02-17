@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class UnoManager : MonoBehaviour
 {
@@ -9,13 +9,18 @@ public class UnoManager : MonoBehaviour
     public string carpetaSprites = "SpritesCartas";
 
     private List<Sprite> spritesCartas = new List<Sprite>();
-    private List<GameObject> cartasMano = new List<GameObject>();
+    public List<GameObject> cartasMano = new List<GameObject>(); // Cambiado a público
     private int cartaSeleccionada = 0;
-    private int ordenPila = 0; // 🔥 Controla el orden de las cartas en la pila de descarte
+    public int ordenPila = 0; // Cambiado a público
 
     private float radioAbanico = 3.5f;
     private float anguloSeparacion = 15f;
     private const int MAX_CARTAS = 15; // 🔥 Límite máximo de cartas en la mano
+
+    public IAUno iaUno;
+
+    private bool esTurnoJugador = true;
+    private bool cambioSentido = false;
 
     void Start()
     {
@@ -25,29 +30,58 @@ public class UnoManager : MonoBehaviour
             GenerarCartaAleatoria();
         }
         ActualizarSeleccion();
+
+        // Inicializa la mano de la IA
+        for (int i = 0; i < 7; i++)
+        {
+            GenerarCartaAleatoriaIA();
+        }
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.RightArrow))
+        if (esTurnoJugador)
         {
-            cartaSeleccionada = (cartaSeleccionada + 1) % cartasMano.Count;
-            ActualizarSeleccion();
+            // Control de turnos del jugador
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                cartaSeleccionada = (cartaSeleccionada + 1) % cartasMano.Count;
+                ActualizarSeleccion();
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                cartaSeleccionada = (cartaSeleccionada - 1 + cartasMano.Count) % cartasMano.Count;
+                ActualizarSeleccion();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                JugarCarta();
+                CambiarTurno();
+            }
+
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                GenerarCartaAleatoria();
+            }
         }
-        else if (Input.GetKeyDown(KeyCode.LeftArrow))
+        else
         {
-            cartaSeleccionada = (cartaSeleccionada - 1 + cartasMano.Count) % cartasMano.Count;
-            ActualizarSeleccion();
+            // Turno de la IA
+            iaUno.JugarTurno();
+            CambiarTurno();
         }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        // Verificar si el jugador o la IA han ganado
+        if (cartasMano.Count == 0)
         {
-            JugarCarta();
+            Debug.Log("¡El jugador ha ganado!");
+            // Reiniciar el juego o mostrar mensaje de victoria
         }
-
-        if (Input.GetKeyDown(KeyCode.X))
+        else if (iaUno.cartasManoIA.Count == 0)
         {
-            GenerarCartaAleatoria();
+            Debug.Log("¡La IA ha ganado!");
+            // Reiniciar el juego o mostrar mensaje de derrota
         }
     }
 
@@ -62,7 +96,7 @@ public class UnoManager : MonoBehaviour
         spritesCartas.AddRange(cargados);
     }
 
-    void GenerarCartaAleatoria()
+    public void GenerarCartaAleatoria() // Cambiado a público
     {
         if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
 
@@ -110,9 +144,52 @@ public class UnoManager : MonoBehaviour
             }
         }
 
-
         cartasMano.Add(nuevaCarta);
         ReorganizarCartasEnAbanico();
+    }
+
+    public void GenerarCartaAleatoriaIA() // Cambiado a público
+    {
+        if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
+
+        int indice = Random.Range(0, spritesCartas.Count);
+        Sprite spriteAleatorio = spritesCartas[indice];
+
+        GameObject nuevaCarta = Instantiate(cartaBasePrefab, iaUno.transform);
+        SpriteRenderer sr = nuevaCarta.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sprite = spriteAleatorio;
+            sr.sortingOrder = 20 + iaUno.cartasManoIA.Count;
+        }
+
+        // Asignar número y color a la carta
+        Carta cartaScript = nuevaCarta.GetComponent<Carta>();
+        var cartaRenderer = nuevaCarta.GetComponent<SpriteRenderer>();
+        if (cartaScript != null)
+        {
+            string nombre_carta = cartaRenderer.sprite.name;
+            print(nombre_carta);
+
+            // Split the name into parts
+            string[] parts = nombre_carta.Split('_');
+
+            // Handle regular cards (Blue_9, Blue_Skip, etc.)
+            if (parts.Length == 2)
+            {
+                cartaScript.color = parts[0]; // The first part is the color (e.g., Blue)
+                cartaScript.numero = parts[1]; // The second part is the number or action (e.g., 9, Skip, Reverse)
+            }
+            // Handle special cards (Draw, Wild_Draw, etc.)
+            else if (parts.Length == 1)
+            {
+                // Special cards like Draw or Wild_Draw
+                cartaScript.color = null; // The whole part is the color (e.g., Draw, Wild_Draw)
+                cartaScript.numero = null; // No specific number or action, so set it to null or a default value
+            }
+        }
+
+        iaUno.cartasManoIA.Add(nuevaCarta);
     }
 
     void ActualizarSeleccion()
@@ -153,6 +230,25 @@ public class UnoManager : MonoBehaviour
         ReorganizarCartasEnAbanico();
         cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
         ActualizarSeleccion();
+
+        // Lógica para cartas especiales
+        if (cartaSeleccionadaScript.numero == "Draw2")
+        {
+            GenerarCartaAleatoria();
+            GenerarCartaAleatoria();
+        }
+        else if (cartaSeleccionadaScript.numero == "Skip")
+        {
+            CambiarTurno();
+        }
+        else if (cartaSeleccionadaScript.numero == "Reverse")
+        {
+            cambioSentido = !cambioSentido;
+        }
+        else if (cartaSeleccionadaScript.numero == "Wild")
+        {
+            // Cambio de color
+        }
     }
 
     bool EsCartaValida(Carta cartaSeleccionada)
@@ -192,5 +288,10 @@ public class UnoManager : MonoBehaviour
             cartasMano[i].transform.localPosition = new Vector3(x, y, 0);
             cartasMano[i].transform.rotation = Quaternion.Euler(0, 0, angulo);
         }
+    }
+
+    private void CambiarTurno()
+    {
+        esTurnoJugador = !esTurnoJugador;
     }
 }
