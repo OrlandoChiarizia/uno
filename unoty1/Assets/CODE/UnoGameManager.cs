@@ -15,7 +15,7 @@ public class UnoManager : MonoBehaviour
 
     private float radioAbanico = 3.5f;
     private float anguloSeparacion = 15f;
-    private const int MAX_CARTAS = 15; // 🔥 Límite máximo de cartas en la mano
+    private const int MAX_CARTAS = 15; // Límite máximo de cartas en la mano
 
     public IAUno iaUno;
 
@@ -100,7 +100,7 @@ public class UnoManager : MonoBehaviour
     {
         if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
 
-        // 🔥 Verifica si el jugador ya tiene el máximo de cartas
+        // Verifica si el jugador ya tiene el máximo de cartas
         if (cartasMano.Count >= MAX_CARTAS)
         {
             Debug.Log("¡Máximo de 15 cartas alcanzado! No puedes robar más.");
@@ -217,7 +217,7 @@ public class UnoManager : MonoBehaviour
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
 
-        // 🔥 Asegurar que la carta esté ENCIMA de las demás en la pila
+        // Asegurar que la carta esté ENCIMA de las demás en la pila
         SpriteRenderer sr = carta.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
