@@ -1,27 +1,63 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;  // Necesario para manejar las escenas
 
-public class MainMenu : MonoBehaviour
+public class Botones : MonoBehaviour
 {
-    // Métodos públicos para asignar a los botones desde el Inspector
+    public UnoManager unoManager;  // Referencia al script UnoManager (asegúrate de asignarlo en el Inspector)
+    public Button botonJugar;  // Botón para jugar la carta
+    public Button botonRobar;  // Botón para robar carta
+    public Button botonSalir;  // Botón para salir del juego
+    public Button botonNuevoJuego;  // Botón para iniciar un nuevo juego
 
-    // Método para cargar la escena del juego
-    public void StartGame()
+    void Start()
     {
-        SceneManager.LoadScene("tablero"); // Cambia "GameScene" al nombre exacto de tu escena del juego
+        // Asegurarse de que los botones están correctamente configurados
+        if (botonJugar != null)
+            botonJugar.onClick.AddListener(JugarCarta);  // Asignar función al botón de jugar
+
+        if (botonRobar != null)
+            botonRobar.onClick.AddListener(RobarCarta);  // Asignar función al botón de robar
+
+        if (botonSalir != null)
+            botonSalir.onClick.AddListener(SalirDelJuego);  // Asignar función al botón de salir
+
+        if (botonNuevoJuego != null)
+            botonNuevoJuego.onClick.AddListener(IniciarNuevoJuego);  // Asignar función al botón de nuevo juego
     }
 
-    // Método para la funcionalidad "Continue"
-    public void ContinueGame()
+    // Función para jugar una carta (llama al método de UnoManager para jugar la carta seleccionada)
+    void JugarCarta()
     {
-        Debug.Log("La funcionalidad 'Continue' está pendiente de implementación.");
+        if (unoManager != null)
+        {
+            unoManager.JugarCarta();  // Llama al método JugarCarta en UnoManager
+        }
     }
 
-    // Método para salir del juego
-    public void ExitGame()
+    // Función para robar una carta (llama al método de UnoManager para robar una carta)
+    void RobarCarta()
+    {
+        if (unoManager != null)
+        {
+            unoManager.GenerarCartaAleatoria();  // Llama al método GenerarCartaAleatoria en UnoManager
+        }
+    }
+
+    // Función para salir del juego (cierra la aplicación o vuelve al menú principal)
+    void SalirDelJuego()
     {
         Debug.Log("Saliendo del juego...");
-        Application.Quit();
+        Application.Quit();  // Cierra la aplicación (en una compilación)
+
+        // Si estás en el editor de Unity, para salir del juego:
+        // UnityEditor.EditorApplication.isPlaying = false;  // Descomentar para usar en el Editor
+    }
+
+    // Función para iniciar un nuevo juego (carga la escena del tablero)
+    void IniciarNuevoJuego()
+    {
+        Debug.Log("Iniciando nuevo juego...");
+        SceneManager.LoadScene("tablero");  // Cambia "tablero" al nombre de tu escena de juego
     }
 }

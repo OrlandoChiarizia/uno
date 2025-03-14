@@ -473,6 +473,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f294418e5cb49b47acb16032466ec94, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  unoManager: {fileID: 0}
+  botonJugar: {fileID: 134791539}
+  botonRobar: {fileID: 0}
+  botonSalir: {fileID: 30675915}
+  botonNuevoJuego: {fileID: 134791539}
 --- !u!4 &546994965
 Transform:
   m_ObjectHideFlags: 0
