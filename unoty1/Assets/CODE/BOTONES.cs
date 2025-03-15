@@ -12,52 +12,44 @@ public class Botones : MonoBehaviour
 
     void Start()
     {
-        // Asegurarse de que los botones están correctamente configurados
         if (botonJugar != null)
-            botonJugar.onClick.AddListener(JugarCarta);  // Asignar función al botón de jugar
+            botonJugar.onClick.AddListener(JugarCarta);
 
         if (botonRobar != null)
-            botonRobar.onClick.AddListener(RobarCarta);  // Asignar función al botón de robar
+            botonRobar.onClick.AddListener(RobarCarta);
 
         if (botonSalir != null)
-            botonSalir.onClick.AddListener(SalirDelJuego);  // Asignar función al botón de salir
+            botonSalir.onClick.AddListener(SalirDelJuego);
 
         if (botonNuevoJuego != null)
-            botonNuevoJuego.onClick.AddListener(IniciarNuevoJuego);  // Asignar función al botón de nuevo juego
+            botonNuevoJuego.onClick.AddListener(IniciarNuevoJuego);
     }
 
-    // Función para jugar una carta (llama al método de UnoManager para jugar la carta seleccionada)
     void JugarCarta()
     {
         if (unoManager != null)
         {
-            unoManager.JugarCarta();  // Llama al método JugarCarta en UnoManager
+            unoManager.JugarCarta();
         }
     }
 
-    // Función para robar una carta (llama al método de UnoManager para robar una carta)
     void RobarCarta()
     {
         if (unoManager != null)
         {
-            unoManager.GenerarCartaAleatoria();  // Llama al método GenerarCartaAleatoria en UnoManager
+            unoManager.GenerarCartaAleatoria();
         }
     }
 
-    // Función para salir del juego (cierra la aplicación o vuelve al menú principal)
     void SalirDelJuego()
     {
         Debug.Log("Saliendo del juego...");
-        Application.Quit();  // Cierra la aplicación (en una compilación)
-
-        // Si estás en el editor de Unity, para salir del juego:
-        // UnityEditor.EditorApplication.isPlaying = false;  // Descomentar para usar en el Editor
+        Application.Quit();
     }
 
-    // Función para iniciar un nuevo juego (carga la escena del tablero)
     void IniciarNuevoJuego()
     {
         Debug.Log("Iniciando nuevo juego...");
-        SceneManager.LoadScene("tablero");  // Cambia "tablero" al nombre de tu escena de juego
+        SceneManager.LoadScene("tablero");
     }
 }

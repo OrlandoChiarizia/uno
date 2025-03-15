@@ -11,11 +11,11 @@ public class UnoManager : MonoBehaviour
     private List<Sprite> spritesCartas = new List<Sprite>();
     private List<GameObject> cartasMano = new List<GameObject>();
     private int cartaSeleccionada = 0;
-    private int ordenPila = 0; // 🔥 Controla el orden de las cartas en la pila de descarte
+    private int ordenPila = 0;
 
     private float radioAbanico = 3.5f;
     private float anguloSeparacion = 15f;
-    private const int MAX_CARTAS = 15; // 🔥 Límite máximo de cartas en la mano
+    private const int MAX_CARTAS = 15;
 
     void Start()
     {
@@ -62,11 +62,10 @@ public class UnoManager : MonoBehaviour
         spritesCartas.AddRange(cargados);
     }
 
-    void GenerarCartaAleatoria()
+    public void GenerarCartaAleatoria() // 🔹 Se hizo público para que Botones.cs pueda acceder
     {
         if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
 
-        // 🔥 Verifica si el jugador ya tiene el máximo de cartas
         if (cartasMano.Count >= MAX_CARTAS)
         {
             Debug.Log("¡Máximo de 15 cartas alcanzado! No puedes robar más.");
@@ -84,32 +83,23 @@ public class UnoManager : MonoBehaviour
             sr.sortingOrder = 20 + cartasMano.Count;
         }
 
-        // Asignar número y color a la carta
         Carta cartaScript = nuevaCarta.GetComponent<Carta>();
-        var cartaRenderer = nuevaCarta.GetComponent<SpriteRenderer>();
         if (cartaScript != null)
         {
-            string nombre_carta = cartaRenderer.sprite.name;
-            print(nombre_carta);
-
-            // Split the name into parts
+            string nombre_carta = sr.sprite.name;
             string[] parts = nombre_carta.Split('_');
 
-            // Handle regular cards (Blue_9, Blue_Skip, etc.)
             if (parts.Length == 2)
             {
-                cartaScript.color = parts[0]; // The first part is the color (e.g., Blue)
-                cartaScript.numero = parts[1]; // The second part is the number or action (e.g., 9, Skip, Reverse)
+                cartaScript.color = parts[0];
+                cartaScript.numero = parts[1];
             }
-            // Handle special cards (Draw, Wild_Draw, etc.)
             else if (parts.Length == 1)
             {
-                // Special cards like Draw or Wild_Draw
-                cartaScript.color = null; // The whole part is the color (e.g., Draw, Wild_Draw)
-                cartaScript.numero = null; // No specific number or action, so set it to null or a default value
+                cartaScript.color = null;
+                cartaScript.numero = null;
             }
         }
-
 
         cartasMano.Add(nuevaCarta);
         ReorganizarCartasEnAbanico();
@@ -120,11 +110,11 @@ public class UnoManager : MonoBehaviour
         for (int i = 0; i < cartasMano.Count; i++)
         {
             SpriteRenderer sr = cartasMano[i].GetComponent<SpriteRenderer>();
-            sr.color = (i == cartaSeleccionada) ? new Color(0.9f, 0.9f, 0.9f, 1f) : Color.white;
+            sr.color = (i == cartaSeleccionada) ? new Color(0.7f, 0.7f, 0.7f, 1f) : Color.white; // 🔹 Se cambió el amarillo por gris
         }
     }
 
-    void JugarCarta()
+    public void JugarCarta() // 🔹 Se hizo público para que Botones.cs pueda acceder
     {
         if (cartasMano.Count == 0) return;
 
@@ -140,13 +130,12 @@ public class UnoManager : MonoBehaviour
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
 
-        // 🔥 Asegurar que la carta esté ENCIMA de las demás en la pila
         SpriteRenderer sr = carta.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
-            sr.sortingOrder = 100 + ordenPila; // Mayor orden = encima de todas
+            sr.sortingOrder = 100 + ordenPila;
         }
-        ordenPila++; // Incrementa el orden para la siguiente carta
+        ordenPila++;
 
         cartasMano.RemoveAt(cartaSeleccionada);
 
