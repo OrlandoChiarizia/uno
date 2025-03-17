@@ -586,50 +586,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1638565336
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1638565338}
-  - component: {fileID: 1638565337}
-  m_Layer: 0
-  m_Name: UnoManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1638565337
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1638565336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c85f2b4af8a3404c883ba9c7bf975bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &1638565338
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1638565336}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 421.45322, y: 192.1029, z: -0.69539285}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1678571522 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9169164026153682786, guid: 41e4eca9fe710f442b0e35580e2b5eff, type: 3}
@@ -692,6 +648,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cartaBasePrefab: {fileID: 1133031171}
   manoJugador: {fileID: 1417439224}
+  manoIA: {fileID: 0}
   pilaDescarte: {fileID: 8560545015006772217}
   carpetaSprites: SpritesCartas
 --- !u!4 &1781040794
@@ -971,11 +928,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 753649828160638411, guid: 2ad80e2c52551474fae0cf874a0ce027, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -19.859703
+      value: -19.3
       objectReference: {fileID: 0}
     - target: {fileID: 753649828160638411, guid: 2ad80e2c52551474fae0cf874a0ce027, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 4.6599994
+      value: 5.31
       objectReference: {fileID: 0}
     - target: {fileID: 753649828160638411, guid: 2ad80e2c52551474fae0cf874a0ce027, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1012,4 +969,3 @@ SceneRoots:
   - {fileID: 1536210193}
   - {fileID: 579996979}
   - {fileID: 1853644511}
-  - {fileID: 1638565338}

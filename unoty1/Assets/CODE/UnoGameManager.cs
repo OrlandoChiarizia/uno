@@ -1,17 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class UnoManager : MonoBehaviour
+public class UnoGameManager : MonoBehaviour
 {
     public GameObject cartaBasePrefab;
     public Transform manoJugador;
+    public Transform manoIA;
     public Transform pilaDescarte;
     public string carpetaSprites = "SpritesCartas";
 
     private List<Sprite> spritesCartas = new List<Sprite>();
-    private List<GameObject> cartasMano = new List<GameObject>();
+    private List<GameObject> cartasManoJugador = new List<GameObject>();
+    private List<GameObject> cartasManoIA = new List<GameObject>();
+
     private int cartaSeleccionada = 0;
     private int ordenPila = 0;
+    private bool esTurnoJugador = true; // Se empieza con el turno del jugador
 
     private float radioAbanico = 3.5f;
     private float anguloSeparacion = 15f;
@@ -20,34 +24,34 @@ public class UnoManager : MonoBehaviour
     void Start()
     {
         CargarSprites();
-        for (int i = 0; i < 7; i++)
-        {
-            GenerarCartaAleatoria();
-        }
+        GenerarCartaInicial();
+        RepartirCartasIniciales();
         ActualizarSeleccion();
     }
 
     void Update()
     {
+        if (!esTurnoJugador || cartasManoJugador.Count == 0) return;
+
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            cartaSeleccionada = (cartaSeleccionada + 1) % cartasMano.Count;
+            cartaSeleccionada = (cartaSeleccionada + 1) % cartasManoJugador.Count;
             ActualizarSeleccion();
         }
         else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            cartaSeleccionada = (cartaSeleccionada - 1 + cartasMano.Count) % cartasMano.Count;
+            cartaSeleccionada = (cartaSeleccionada - 1 + cartasManoJugador.Count) % cartasManoJugador.Count;
             ActualizarSeleccion();
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            JugarCarta();
+            JugarCartaJugador();
         }
 
         if (Input.GetKeyDown(KeyCode.X))
         {
-            GenerarCartaAleatoria();
+            RobarCartaJugador();
         }
     }
 
@@ -62,20 +66,63 @@ public class UnoManager : MonoBehaviour
         spritesCartas.AddRange(cargados);
     }
 
-    public void GenerarCartaAleatoria() // 🔹 Se hizo público para que Botones.cs pueda acceder
+    
+    void GenerarCartaInicial()
     {
         if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
-
-        if (cartasMano.Count >= MAX_CARTAS)
-        {
-            Debug.Log("¡Máximo de 15 cartas alcanzado! No puedes robar más.");
-            return;
-        }
 
         int indice = Random.Range(0, spritesCartas.Count);
         Sprite spriteAleatorio = spritesCartas[indice];
 
-        GameObject nuevaCarta = Instantiate(cartaBasePrefab, manoJugador);
+        GameObject cartaInicial = Instantiate(cartaBasePrefab, pilaDescarte);
+        cartaInicial.transform.position = new Vector3(-19, 5, 0); // Colocar en el centro del tablero
+
+        SpriteRenderer sr = cartaInicial.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sprite = spriteAleatorio;
+            sr.sortingOrder = 0; // Asegurar que quede por debajo de las demás cartas
+        }
+
+        Carta cartaScript = cartaInicial.GetComponent<Carta>();
+        if (cartaScript != null)
+        {
+            string[] parts = spriteAleatorio.name.Split('_');
+            cartaScript.color = parts[0];
+            cartaScript.numero = parts.Length > 1 ? parts[1] : null;
+        }
+    }
+
+    void RepartirCartasIniciales()
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            RobarCartaJugador();
+            RobarCartaIA();
+        }
+    }
+
+    public void RobarCartaJugador()
+    {
+        if (cartasManoJugador.Count >= MAX_CARTAS) return;
+        GenerarCarta(manoJugador, cartasManoJugador);
+        ReorganizarCartasEnAbanico(cartasManoJugador);
+    }
+
+    void RobarCartaIA()
+    {
+        if (cartasManoIA.Count >= MAX_CARTAS) return;
+        GenerarCarta(manoIA, cartasManoIA);
+    }
+
+    void GenerarCarta(Transform mano, List<GameObject> cartasMano)
+    {
+        if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
+
+        int indice = Random.Range(0, spritesCartas.Count);
+        Sprite spriteAleatorio = spritesCartas[indice];
+
+        GameObject nuevaCarta = Instantiate(cartaBasePrefab, mano);
         SpriteRenderer sr = nuevaCarta.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
@@ -86,86 +133,83 @@ public class UnoManager : MonoBehaviour
         Carta cartaScript = nuevaCarta.GetComponent<Carta>();
         if (cartaScript != null)
         {
-            string nombre_carta = sr.sprite.name;
-            string[] parts = nombre_carta.Split('_');
-
-            if (parts.Length == 2)
-            {
-                cartaScript.color = parts[0];
-                cartaScript.numero = parts[1];
-            }
-            else if (parts.Length == 1)
-            {
-                cartaScript.color = null;
-                cartaScript.numero = null;
-            }
+            string[] parts = spriteAleatorio.name.Split('_');
+            cartaScript.color = parts[0];
+            cartaScript.numero = parts.Length > 1 ? parts[1] : null;
         }
 
         cartasMano.Add(nuevaCarta);
-        ReorganizarCartasEnAbanico();
     }
 
-    void ActualizarSeleccion()
+    public void JugarCartaJugador()
     {
-        for (int i = 0; i < cartasMano.Count; i++)
-        {
-            SpriteRenderer sr = cartasMano[i].GetComponent<SpriteRenderer>();
-            sr.color = (i == cartaSeleccionada) ? new Color(0.7f, 0.7f, 0.7f, 1f) : Color.white; // 🔹 Se cambió el amarillo por gris
-        }
-    }
+        if (cartasManoJugador.Count == 0) return;
 
-    public void JugarCarta() // 🔹 Se hizo público para que Botones.cs pueda acceder
-    {
-        if (cartasMano.Count == 0) return;
-
-        GameObject carta = cartasMano[cartaSeleccionada];
+        GameObject carta = cartasManoJugador[cartaSeleccionada];
         Carta cartaSeleccionadaScript = carta.GetComponent<Carta>();
 
         if (cartaSeleccionadaScript == null || !EsCartaValida(cartaSeleccionadaScript))
         {
-            Debug.Log("¡La carta seleccionada no es válida para descartar!");
+            Debug.Log("¡La carta seleccionada no es válida!");
             return;
         }
 
         carta.transform.SetParent(pilaDescarte);
         carta.transform.localPosition = Vector3.zero;
-
-        SpriteRenderer sr = carta.GetComponent<SpriteRenderer>();
-        if (sr != null)
-        {
-            sr.sortingOrder = 100 + ordenPila;
-        }
+        carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
         ordenPila++;
 
-        cartasMano.RemoveAt(cartaSeleccionada);
-
-        ReorganizarCartasEnAbanico();
-        cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasMano.Count - 1);
+        cartasManoJugador.RemoveAt(cartaSeleccionada);
+        ReorganizarCartasEnAbanico(cartasManoJugador);
+        cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasManoJugador.Count - 1);
         ActualizarSeleccion();
+
+        CambiarTurno();
+    }
+
+    void TurnoIA()
+    {
+        GameObject cartaJugada = null;
+
+        foreach (GameObject carta in cartasManoIA)
+        {
+            Carta cartaScript = carta.GetComponent<Carta>();
+            if (EsCartaValida(cartaScript))
+            {
+                cartaJugada = carta;
+                break;
+            }
+        }
+
+        if (cartaJugada != null)
+        {
+            cartaJugada.transform.SetParent(pilaDescarte);
+            cartaJugada.transform.localPosition = Vector3.zero;
+            cartaJugada.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
+            ordenPila++;
+            cartasManoIA.Remove(cartaJugada);
+        }
+        else
+        {
+            RobarCartaIA();
+        }
+
+        CambiarTurno();
     }
 
     bool EsCartaValida(Carta cartaSeleccionada)
     {
-        if (pilaDescarte.childCount == 0)
-            return true;
+        if (pilaDescarte.childCount == 0) return true;
 
         GameObject cartaPila = pilaDescarte.GetChild(pilaDescarte.childCount - 1).gameObject;
         Carta cartaPilaScript = cartaPila.GetComponent<Carta>();
 
-        if (string.IsNullOrEmpty(cartaPilaScript.numero) && string.IsNullOrEmpty(cartaPilaScript.color))
-        {
-            return true;
-        }
-
-        if (string.IsNullOrEmpty(cartaSeleccionada.numero) && string.IsNullOrEmpty(cartaSeleccionada.color))
-        {
-            return true;
-        }
-
+        // La carta es válida si el color o el número coinciden con la carta en la pila
         return cartaSeleccionada.color == cartaPilaScript.color || cartaSeleccionada.numero == cartaPilaScript.numero;
     }
 
-    void ReorganizarCartasEnAbanico()
+
+    void ReorganizarCartasEnAbanico(List<GameObject> cartasMano)
     {
         int totalCartas = cartasMano.Count;
         if (totalCartas == 0) return;
@@ -180,6 +224,25 @@ public class UnoManager : MonoBehaviour
 
             cartasMano[i].transform.localPosition = new Vector3(x, y, 0);
             cartasMano[i].transform.rotation = Quaternion.Euler(0, 0, angulo);
+        }
+    }
+
+    void ActualizarSeleccion()
+    {
+        for (int i = 0; i < cartasManoJugador.Count; i++)
+        {
+            SpriteRenderer sr = cartasManoJugador[i].GetComponent<SpriteRenderer>();
+            sr.color = (i == cartaSeleccionada) ? new Color(0.7f, 0.7f, 0.7f, 1f) : Color.white;
+        }
+    }
+
+    void CambiarTurno()
+    {
+        esTurnoJugador = !esTurnoJugador;
+
+        if (!esTurnoJugador)
+        {
+            Invoke("TurnoIA", 1.0f);
         }
     }
 }

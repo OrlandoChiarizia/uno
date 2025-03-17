@@ -4,7 +4,8 @@ using UnityEngine.SceneManagement;  // Necesario para manejar las escenas
 
 public class Botones : MonoBehaviour
 {
-    public UnoManager unoManager;  // Referencia al script UnoManager (asegúrate de asignarlo en el Inspector)
+    public UnoGameManager unoManager;
+    // Referencia al script UnoManager (asegúrate de asignarlo en el Inspector)
     public Button botonJugar;  // Botón para jugar la carta
     public Button botonRobar;  // Botón para robar carta
     public Button botonSalir;  // Botón para salir del juego
@@ -29,7 +30,7 @@ public class Botones : MonoBehaviour
     {
         if (unoManager != null)
         {
-            unoManager.JugarCarta();
+            unoManager.JugarCartaJugador();  // Usa el nuevo nombre correcto
         }
     }
 
@@ -37,7 +38,7 @@ public class Botones : MonoBehaviour
     {
         if (unoManager != null)
         {
-            unoManager.GenerarCartaAleatoria();
+            unoManager.RobarCartaJugador();  // Usa el nuevo nombre correcto
         }
     }
 
