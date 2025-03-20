@@ -66,8 +66,8 @@ public class UnoGameManager : MonoBehaviour
         spritesCartas.AddRange(cargados);
     }
 
-    
-    void GenerarCartaInicial()
+
+    public void GenerarCartaInicial()
     {
         if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
 
@@ -102,12 +102,36 @@ public class UnoGameManager : MonoBehaviour
         }
     }
 
+
     public void RobarCartaJugador()
     {
         if (cartasManoJugador.Count >= MAX_CARTAS) return;
+
+        // Robar una carta
         GenerarCarta(manoJugador, cartasManoJugador);
         ReorganizarCartasEnAbanico(cartasManoJugador);
+
+        // Verificar si el jugador puede jugar alguna carta
+        bool puedeJugar = false;
+        foreach (GameObject carta in cartasManoJugador)
+        {
+            Carta cartaScript = carta.GetComponent<Carta>();
+            if (EsCartaValida(cartaScript))
+            {
+                puedeJugar = true;
+                break;
+            }
+        }
+
+        // Si no puede jugar, cambiar turno a la IA
+        if (!puedeJugar)
+        {
+            Debug.Log("No hay cartas jugables, se pasa el turno a la IA.");
+            CambiarTurno();
+        }
     }
+
+
 
     void RobarCartaIA()
     {
@@ -171,6 +195,7 @@ public class UnoGameManager : MonoBehaviour
     {
         GameObject cartaJugada = null;
 
+        // La IA intenta jugar una carta válida
         foreach (GameObject carta in cartasManoIA)
         {
             Carta cartaScript = carta.GetComponent<Carta>();
@@ -183,19 +208,53 @@ public class UnoGameManager : MonoBehaviour
 
         if (cartaJugada != null)
         {
+            // Juega la carta en la pila de descarte
             cartaJugada.transform.SetParent(pilaDescarte);
             cartaJugada.transform.localPosition = Vector3.zero;
             cartaJugada.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
             ordenPila++;
             cartasManoIA.Remove(cartaJugada);
+            Debug.Log("IA ha jugado una carta.");
         }
         else
         {
+            Debug.Log("IA no tiene una carta jugable y robará una carta.");
+            // Si no tiene carta válida, roba una carta
             RobarCartaIA();
+
+            // Después de robar, revisa si ahora tiene una carta válida
+            foreach (GameObject carta in cartasManoIA)
+            {
+                Carta cartaScript = carta.GetComponent<Carta>();
+                if (EsCartaValida(cartaScript))
+                {
+                    cartaJugada = carta;
+                    break;
+                }
+            }
+
+            // Si encuentra una carta jugable, la juega en el mismo turno
+            if (cartaJugada != null)
+            {
+                Debug.Log("IA ha robado una carta jugable y la jugará.");
+                cartaJugada.transform.SetParent(pilaDescarte);
+                cartaJugada.transform.localPosition = Vector3.zero;
+                cartaJugada.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
+                ordenPila++;
+                cartasManoIA.Remove(cartaJugada);
+            }
+            else
+            {
+                Debug.Log("IA robó pero aún no tiene una carta jugable. Turno del jugador.");
+                CambiarTurno();
+                return;
+            }
         }
 
+        // Si la IA jugó una carta, sigue el turno del jugador
         CambiarTurno();
     }
+
 
     bool EsCartaValida(Carta cartaSeleccionada)
     {
