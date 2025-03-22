@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
+
 
 public class UnoGameManager : MonoBehaviour
 {
@@ -20,6 +22,8 @@ public class UnoGameManager : MonoBehaviour
     private float radioAbanico = 3.5f;
     private float anguloSeparacion = 15f;
     private const int MAX_CARTAS = 15;
+    public TextMeshProUGUI debugTexto;  // ✅ Correcto para UI
+
 
     void Start()
     {
@@ -27,8 +31,21 @@ public class UnoGameManager : MonoBehaviour
         GenerarCartaInicial();
         RepartirCartasIniciales();
         ActualizarSeleccion();
+        MostrarDebug("🎮 ¡Juego Iniciado!");
     }
 
+
+    public void MostrarDebug(string mensaje)
+    {
+        if (debugTexto != null)
+        {
+            debugTexto.text = mensaje; // 🔹 Muestra el mensaje en la UI
+        }
+        else
+        {
+            Debug.Log("DEBUG: " + mensaje); // 🔹 Si no hay UI, muestra en la consola
+        }
+    }
     void Update()
     {
         if (!esTurnoJugador || cartasManoJugador.Count == 0) return;
@@ -97,47 +114,90 @@ public class UnoGameManager : MonoBehaviour
     {
         for (int i = 0; i < 7; i++)
         {
-            RobarCartaJugador();
-            RobarCartaIA();
+            // 🚀 Usamos una versión de robar sin restricciones para el reparto inicial
+            RobarCartaInicial(manoJugador, cartasManoJugador);
+            RobarCartaInicial(manoIA, cartasManoIA);
         }
     }
+
+    void RobarCartaInicial(Transform mano, List<GameObject> cartasMano)
+    {
+        if (cartasMano.Count >= MAX_CARTAS) return;
+        GenerarCarta(mano, cartasMano);
+        ReorganizarCartasEnAbanico(cartasMano);
+    }
+
+
 
 
     public void RobarCartaJugador()
     {
+        // 🛑 Si el jugador tiene una carta jugable, no puede robar
+        if (TieneCartaJugable(cartasManoJugador))
+        {
+            MostrarDebug("❌ No puedes robar porque tienes cartas jugables.");
+            return;
+        }
+
         if (cartasManoJugador.Count >= MAX_CARTAS) return;
 
-        // Robar una carta
         GenerarCarta(manoJugador, cartasManoJugador);
         ReorganizarCartasEnAbanico(cartasManoJugador);
 
-        // Verificar si el jugador puede jugar alguna carta
-        bool puedeJugar = false;
-        foreach (GameObject carta in cartasManoJugador)
+        // 🛠 Verifica si la carta robada ahora es jugable
+        if (TieneCartaJugable(cartasManoJugador))
         {
-            Carta cartaScript = carta.GetComponent<Carta>();
-            if (EsCartaValida(cartaScript))
-            {
-                puedeJugar = true;
-                break;
-            }
+            MostrarDebug("✅ Has robado una carta jugable.");
+        }
+        else
+        {
+            MostrarDebug("🚫 Has robado una carta, pero aún no puedes jugar.");
         }
 
         // Si no puede jugar, cambiar turno a la IA
-        if (!puedeJugar)
-        {
-            Debug.Log("No hay cartas jugables, se pasa el turno a la IA.");
-            CambiarTurno();
-        }
+        CambiarTurno();
     }
+
 
 
 
     void RobarCartaIA()
     {
+        // 🛑 Si la IA tiene una carta jugable, no debe robar
+        if (TieneCartaJugable(cartasManoIA))
+        {
+            MostrarDebug("❌ La IA no puede robar porque tiene cartas jugables.");
+            CambiarTurno();
+            return;
+        }
+
         if (cartasManoIA.Count >= MAX_CARTAS) return;
+
         GenerarCarta(manoIA, cartasManoIA);
+
+        // 🛠 Verifica si la IA ahora puede jugar
+        if (TieneCartaJugable(cartasManoIA))
+        {
+            MostrarDebug("🤖 La IA ha robado una carta jugable.");
+        }
+        else
+        {
+            MostrarDebug("🤖 La IA ha robado pero sigue sin cartas jugables.");
+        }
     }
+    bool TieneCartaJugable(List<GameObject> mano)
+    {
+        foreach (GameObject carta in mano)
+        {
+            Carta cartaScript = carta.GetComponent<Carta>();
+            if (EsCartaValida(cartaScript))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     void GenerarCarta(Transform mano, List<GameObject> cartasMano)
     {
@@ -174,7 +234,7 @@ public class UnoGameManager : MonoBehaviour
 
         if (cartaSeleccionadaScript == null || !EsCartaValida(cartaSeleccionadaScript))
         {
-            Debug.Log("¡La carta seleccionada no es válida!");
+            MostrarDebug("¡La carta seleccionada no es válida!");
             return;
         }
 
@@ -193,6 +253,8 @@ public class UnoGameManager : MonoBehaviour
 
     void TurnoIA()
     {
+        if (esTurnoJugador) return; // Asegurar que sea el turno de la IA
+
         GameObject cartaJugada = null;
 
         // La IA intenta jugar una carta válida
@@ -208,51 +270,41 @@ public class UnoGameManager : MonoBehaviour
 
         if (cartaJugada != null)
         {
-            // Juega la carta en la pila de descarte
-            cartaJugada.transform.SetParent(pilaDescarte);
-            cartaJugada.transform.localPosition = Vector3.zero;
-            cartaJugada.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
-            ordenPila++;
-            cartasManoIA.Remove(cartaJugada);
-            Debug.Log("IA ha jugado una carta.");
+            // ✅ La IA juega la carta y cambia de turno inmediatamente
+            JugarCartaIA(cartaJugada);
+            CambiarTurno();
+            return;
+        }
+
+        // Si no tiene carta válida, roba UNA sola carta
+        MostrarDebug("IA no tiene carta jugable y robará una.");
+        RobarCartaIA();
+
+        // Revisa si la carta robada es jugable
+        Carta cartaRobada = cartasManoIA[cartasManoIA.Count - 1].GetComponent<Carta>();
+        if (EsCartaValida(cartaRobada))
+        {
+            MostrarDebug("IA ha robado una carta jugable y la jugará.");
+            JugarCartaIA(cartasManoIA[cartasManoIA.Count - 1]);
         }
         else
         {
-            Debug.Log("IA no tiene una carta jugable y robará una carta.");
-            // Si no tiene carta válida, roba una carta
-            RobarCartaIA();
-
-            // Después de robar, revisa si ahora tiene una carta válida
-            foreach (GameObject carta in cartasManoIA)
-            {
-                Carta cartaScript = carta.GetComponent<Carta>();
-                if (EsCartaValida(cartaScript))
-                {
-                    cartaJugada = carta;
-                    break;
-                }
-            }
-
-            // Si encuentra una carta jugable, la juega en el mismo turno
-            if (cartaJugada != null)
-            {
-                Debug.Log("IA ha robado una carta jugable y la jugará.");
-                cartaJugada.transform.SetParent(pilaDescarte);
-                cartaJugada.transform.localPosition = Vector3.zero;
-                cartaJugada.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
-                ordenPila++;
-                cartasManoIA.Remove(cartaJugada);
-            }
-            else
-            {
-                Debug.Log("IA robó pero aún no tiene una carta jugable. Turno del jugador.");
-                CambiarTurno();
-                return;
-            }
+            MostrarDebug("IA ha robado pero no puede jugar. Turno del jugador.");
         }
 
-        // Si la IA jugó una carta, sigue el turno del jugador
+        // ✅ Cambio de turno después de jugar o robar
         CambiarTurno();
+    }
+
+    void JugarCartaIA(GameObject carta)
+    {
+        carta.transform.SetParent(pilaDescarte);
+        carta.transform.localPosition = Vector3.zero;
+        carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
+        ordenPila++;
+        cartasManoIA.Remove(carta);
+
+        MostrarDebug("🤖 IA ha jugado una carta.");
     }
 
 
