@@ -112,7 +112,7 @@
             if (sr != null)
             {
                 sr.sprite = spriteAleatorio;
-                sr.sortingOrder = 0; // Asegurar que quede por debajo de las demás cartas
+                sr.sortingOrder = 1; // Asegurar que quede por debajo de las demás cartas
             }
 
             Carta cartaScript = cartaInicial.GetComponent<Carta>();
@@ -144,38 +144,41 @@
 
 
 
-        public void RobarCartaJugador()
+    public void RobarCartaJugador()
+    {
+        // 🛑 Si el jugador tiene una carta jugable, no puede robar
+        if (TieneCartaJugable(cartasManoJugador))
         {
-            // 🛑 Si el jugador tiene una carta jugable, no puede robar
-            if (TieneCartaJugable(cartasManoJugador))
-            {
-                MostrarDebug("❌ No puedes robar porque tienes cartas jugables.");
-                return;
-            }
-
-            if (cartasManoJugador.Count >= MAX_CARTAS) return;
-
-            GenerarCarta(manoJugador, cartasManoJugador);
-            ReorganizarCartasEnAbanico(cartasManoJugador);
-
-            // 🛠 Verifica si la carta robada ahora es jugable
-            if (TieneCartaJugable(cartasManoJugador))
-            {
-                MostrarDebug("✅ Has robado una carta jugable.");
-            }
-            else
-            {
-                MostrarDebug("🚫 Has robado una carta, pero aún no puedes jugar.");
-            }
-
-            // Si no puede jugar, cambiar turno a la IA
-            CambiarTurno();
+            MostrarDebug("❌ No puedes robar porque tienes cartas jugables.");
+            return;
         }
 
+        if (cartasManoJugador.Count >= MAX_CARTAS) return;
+
+        // 🃏 Generamos una nueva carta y la agregamos a la mano
+        GenerarCarta(manoJugador, cartasManoJugador);
+        ReorganizarCartasEnAbanico(cartasManoJugador);
+
+        // ✅ Verificamos si la carta robada es jugable
+        if (TieneCartaJugable(cartasManoJugador))
+        {
+            MostrarDebug("✅ Has robado una carta jugable. Puedes jugarla.");
+            return; // 🚀 Permite que el jugador juegue en lugar de cambiar el turno
+        }
+        else
+        {
+            MostrarDebug("🚫 Has robado una carta, pero aún no puedes jugar.");
+        }
+
+        // 🔄 Si no puede jugar, cambiar turno a la IA
+        CambiarTurno();
+    }
 
 
 
-        void RobarCartaIA()
+
+
+    void RobarCartaIA()
         {
             // 🛑 Si la IA tiene una carta jugable, no debe robar
             if (TieneCartaJugable(cartasManoIA))
@@ -286,12 +289,23 @@
         if (cartaSeleccionadaScript.color == "wild")
         {
             MostrarDebug("🎨 Elige un color para continuar.");
-            panelSeleccionColor.SetActive(true);  // ✅ Mostrar el panel de selección
+            panelSeleccionColor.SetActive(true);
             return;  // ⛔ No cambiar turno hasta que el jugador elija color
         }
 
-        CambiarTurno();  // 🔄 Pasar el turno si no es Wild
+        // ✅ Si la carta es Skip o Reverse, permitir que el jugador juegue otra carta
+        if (cartaSeleccionadaScript.numero == "Skip" || cartaSeleccionadaScript.numero == "Reverse")
+        {
+            MostrarDebug($"🔄 Jugaste una carta {cartaSeleccionadaScript.numero}. ¡Puedes jugar otra carta del mismo color o número!");
+            CambiarTurno(true);  // 🔥 Permite jugar otra vez
+            return;
+        }
+
+        CambiarTurno();  // 🔄 Pasar el turno si no es Skip ni Reverse
     }
+
+
+
 
 
     public void SeleccionarColorRojo()
@@ -355,75 +369,89 @@
 
 
     void TurnoIA()
+    {
+        if (esTurnoJugador) return;
+
+        GameObject cartaJugada = null;
+        Carta cartaJugadaScript = null;
+
+        foreach (GameObject carta in cartasManoIA)
         {
-            if (esTurnoJugador) return;
+            Carta cartaScript = carta.GetComponent<Carta>();
+            if (EsCartaValida(cartaScript))
+            {
+                cartaJugada = carta;
+                cartaJugadaScript = cartaScript;
+                break;
+            }
+        }
 
-            GameObject cartaJugada = null;
-            Carta cartaJugadaScript = null;
-
-            // 🔹 Buscar una carta jugable que coincida en color o número
+        if (cartaJugada == null)
+        {
             foreach (GameObject carta in cartasManoIA)
             {
                 Carta cartaScript = carta.GetComponent<Carta>();
-                if (EsCartaValida(cartaScript))
+                if (cartaScript.color == "wild")
                 {
                     cartaJugada = carta;
                     cartaJugadaScript = cartaScript;
                     break;
                 }
             }
+        }
 
-            // 🔹 Si no hay una carta jugable, intentar jugar un comodín (wild)
-            if (cartaJugada == null)
+        if (cartaJugada != null)
+        {
+            if (cartaJugadaScript.color == "wild")
             {
-                foreach (GameObject carta in cartasManoIA)
-                {
-                    Carta cartaScript = carta.GetComponent<Carta>();
-                    if (cartaScript.color == "wild") // Jugar un Wild si no tiene otra opción
-                    {
-                        cartaJugada = carta;
-                        cartaJugadaScript = cartaScript;
-                        break;
-                    }
-                }
+                colorActual = ElegirMejorColorIA();
+                MostrarDebug($"🤖 La IA ha jugado un Wild y ha elegido el color {colorActual}");
             }
 
-            // 🔹 Si encontró una carta jugable (ya sea normal o Wild), jugarla
-            if (cartaJugada != null)
-            {
-                if (cartaJugadaScript.color == "wild")
-                {
-                    colorActual = ElegirMejorColorIA(); // La IA elige el color con más cartas en su mano
-                    MostrarDebug($"🤖 La IA ha jugado una carta Wild y ha elegido el color {colorActual}");
-                }
+            JugarCartaIA(cartaJugada);
 
-                JugarCartaIA(cartaJugada);
-                CambiarTurno();
+            // Si la IA juega una carta Skip o Reverse, se activa el turno extra para la IA
+            if (cartaJugadaScript.numero == "Skip" || cartaJugadaScript.numero == "Reverse")
+            {
+                MostrarDebug("🤖 La IA jugó una carta Skip/Reverse y vuelve a jugar.");
+                CambiarTurno(true);  // 🔥 La IA vuelve a jugar
                 return;
             }
 
-            // 🔹 Si no tiene cartas jugables, la IA debe robar
-            MostrarDebug("🤖 La IA no tiene carta jugable y robará una.");
-            RobarCartaIA();
-
-            // 🔹 Si la IA robó y ahora tiene una carta jugable, jugarla inmediatamente
-            foreach (GameObject carta in cartasManoIA)
-            {
-                Carta cartaScript = carta.GetComponent<Carta>();
-                if (EsCartaValida(cartaScript))
-                {
-                    JugarCartaIA(carta);
-                    CambiarTurno();
-                    return;
-                }
-            }
-
-            // 🔹 Si después de robar sigue sin cartas jugables, cambiar turno
             CambiarTurno();
+            return;
         }
 
+        MostrarDebug("🤖 La IA no tiene carta jugable y robará una.");
+        RobarCartaIA();
 
-        void JugarCartaIA(GameObject carta)
+        foreach (GameObject carta in cartasManoIA)
+        {
+            Carta cartaScript = carta.GetComponent<Carta>();
+            if (EsCartaValida(cartaScript))
+            {
+                JugarCartaIA(carta);
+
+                if (cartaScript.numero == "Skip" || cartaScript.numero == "Reverse")
+                {
+                    MostrarDebug("🤖 La IA jugó una carta Skip/Reverse y vuelve a jugar.");
+                    CambiarTurno(true);  // 🔥 La IA vuelve a jugar
+                    return;
+                }
+
+                CambiarTurno();
+                return;
+            }
+        }
+
+        CambiarTurno();
+    }
+
+
+
+
+
+    void JugarCartaIA(GameObject carta)
         {
             carta.transform.SetParent(pilaDescarte);
             carta.transform.localPosition = Vector3.zero;
@@ -491,10 +519,10 @@
         {
             Dictionary<string, int> contadorColores = new Dictionary<string, int>()
             {
-                { "rojo", 0 },
-                { "azul", 0 },
-                { "verde", 0 },
-                { "amarillo", 0 }
+                { "Red", 0 },
+                { "Blue", 0 },
+                { "Green", 0 },
+                { "Yellow", 0 }
             };
 
             foreach (GameObject carta in cartasManoIA)
@@ -509,13 +537,41 @@
             string mejorColor = contadorColores.Aggregate((x, y) => x.Value > y.Value ? x : y).Key;
             return mejorColor;
         }
-        public void CambiarTurno()
+    public void CambiarTurno(bool turnoExtra = false)
+    {
+        // Si hay un turno extra, el mismo jugador juega de nuevo
+        if (turnoExtra)
         {
-            esTurnoJugador = !esTurnoJugador;
+            MostrarDebug("🔄 Turno extra activado. El mismo jugador juega otra vez.");
 
-            if (!esTurnoJugador)
+            // Si es el turno del jugador, permitimos que juegue otra carta
+            if (esTurnoJugador)
             {
+                return; // El jugador puede jugar otra vez
+            }
+            else
+            {
+                // Si es la IA, hacemos que juegue otra vez inmediatamente
                 Invoke("TurnoIA", 1.0f);
+                return;
             }
         }
+
+        // Cambiar el turno normalmente
+        esTurnoJugador = !esTurnoJugador;
+
+        if (!esTurnoJugador)
+        {
+            MostrarDebug("🤖 Turno de la IA.");
+            Invoke("TurnoIA", 1.0f); // Esperar 1 segundo antes de que la IA juegue
+        }
+        else
+        {
+            MostrarDebug("👤 Turno del jugador.");
+        }
     }
+
+}
+
+
+    
