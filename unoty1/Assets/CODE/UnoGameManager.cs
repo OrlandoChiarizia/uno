@@ -2,6 +2,7 @@
     using System.Collections.Generic;
     using TMPro;
     using System.Linq;
+using System.Collections;
 
 
     public class UnoGameManager : MonoBehaviour
@@ -375,10 +376,11 @@
         GameObject cartaJugada = null;
         Carta cartaJugadaScript = null;
 
+        // 🔹 Primero, buscar una carta jugable por color o número
         foreach (GameObject carta in cartasManoIA)
         {
             Carta cartaScript = carta.GetComponent<Carta>();
-            if (EsCartaValida(cartaScript))
+            if (EsCartaValida(cartaScript) && cartaScript.color != "wild") // No jugar Wild aún
             {
                 cartaJugada = carta;
                 cartaJugadaScript = cartaScript;
@@ -386,12 +388,13 @@
             }
         }
 
+        // 🔹 Si no encontró una carta jugable normal, buscar un Wild
         if (cartaJugada == null)
         {
             foreach (GameObject carta in cartasManoIA)
             {
                 Carta cartaScript = carta.GetComponent<Carta>();
-                if (cartaScript.color == "wild")
+                if (cartaScript.color == "wild")  // Jugar Wild solo si no tiene otra opción
                 {
                     cartaJugada = carta;
                     cartaJugadaScript = cartaScript;
@@ -400,31 +403,51 @@
             }
         }
 
-        if (cartaJugada != null)
+        IEnumerator EsperarYMostrarDebug(GameObject cartaJugada, Carta cartaJugadaScript, float tiempoEspera)
         {
+            // 🃏 Primero, jugar la carta
+            JugarCartaIA(cartaJugada);
+
+            // ⏳ Esperar un poco para que la animación de jugar la carta ocurra
+            yield return new WaitForSeconds(tiempoEspera);
+
+            // 🃏 Si la carta es Wild, elegir y mostrar el color
             if (cartaJugadaScript.color == "wild")
             {
                 colorActual = ElegirMejorColorIA();
-                MostrarDebug($"🤖 La IA ha jugado un Wild y ha elegido el color {colorActual}");
+                MostrarDebug($"🤖 La IA ha jugado un Wild y ha elegido el color {colorActual.ToUpper()} 🎨");
+
+                // Aplicar el color seleccionado
+                cartaJugadaScript.color = colorActual;
+
+                yield return new WaitForSeconds(5f); // ⏳ Esperar antes de continuar
             }
 
-            JugarCartaIA(cartaJugada);
-
-            // Si la IA juega una carta Skip o Reverse, se activa el turno extra para la IA
+            // 🛑 Si la IA juega Skip o Reverse, repetir turno
             if (cartaJugadaScript.numero == "Skip" || cartaJugadaScript.numero == "Reverse")
             {
-                MostrarDebug("🤖 La IA jugó una carta Skip/Reverse y vuelve a jugar.");
-                CambiarTurno(true);  // 🔥 La IA vuelve a jugar
-                return;
+                MostrarDebug("🤖 La IA te ha cancelado el turno y volverá a jugar.");
+                yield return new WaitForSeconds(5f);
+                TurnoIA();
+                yield break;
             }
 
+            // 🔹 Pasar el turno normalmente después de esperar
             CambiarTurno();
+        }
+
+        // 🔹 Si encontró una carta jugable (normal o Wild), jugarla
+        if (cartaJugada != null)
+        {
+            StartCoroutine(EsperarYMostrarDebug(cartaJugada, cartaJugadaScript, 0.5f)); // ⏳ Pequeña pausa antes del mensaje
             return;
         }
 
+        // 🔹 Si no tiene cartas jugables NI Wild, entonces roba una carta
         MostrarDebug("🤖 La IA no tiene carta jugable y robará una.");
-        RobarCartaIA();
+        RobarCartaIA(); // ✅ Se llama sin asignarla a una variable
 
+        // 🔹 Intentar jugar la carta robada inmediatamente
         foreach (GameObject carta in cartasManoIA)
         {
             Carta cartaScript = carta.GetComponent<Carta>();
@@ -432,10 +455,11 @@
             {
                 JugarCartaIA(carta);
 
+                // 🛑 Si la carta robada es Skip o Reverse, repetir turno
                 if (cartaScript.numero == "Skip" || cartaScript.numero == "Reverse")
                 {
-                    MostrarDebug("🤖 La IA jugó una carta Skip/Reverse y vuelve a jugar.");
-                    CambiarTurno(true);  // 🔥 La IA vuelve a jugar
+                    MostrarDebug("🤖 La IA te ha cancelado el turno y volverá a jugar.");
+                    TurnoIA(); // 🔥 La IA vuelve a jugar
                     return;
                 }
 
@@ -444,27 +468,57 @@
             }
         }
 
+        // 🔹 Si después de robar aún no tiene jugada, pasa el turno
         CambiarTurno();
     }
 
 
+    // 🃏 La IA elige el mejor color basado en sus cartas
+    string ElegirMejorColorIA()
+{
+    Dictionary<string, int> contadorColores = new Dictionary<string, int>()
+    {
+        { "Red", 0 },
+        { "Blue", 0 },
+        { "Green", 0 },
+        { "Yellow", 0 }
+    };
 
-
-
-    void JugarCartaIA(GameObject carta)
+    // Contar cuántas cartas tiene de cada color
+    foreach (GameObject carta in cartasManoIA)
+    {
+        Carta cartaScript = carta.GetComponent<Carta>();
+        if (contadorColores.ContainsKey(cartaScript.color))
         {
-            carta.transform.SetParent(pilaDescarte);
-            carta.transform.localPosition = Vector3.zero;
-            carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
-            ordenPila++;
-            cartasManoIA.Remove(carta);
-
-            MostrarDebug("🤖 IA ha jugado una carta.");
+            contadorColores[cartaScript.color]++;
         }
-        
+    }
+
+    // 🏆 Elegir el color con más cartas; si hay empate, elegir uno al azar
+    int maxCantidad = contadorColores.Values.Max();
+    List<string> mejoresColores = contadorColores
+        .Where(c => c.Value == maxCantidad)
+        .Select(c => c.Key)
+        .ToList();
+
+    return mejoresColores[UnityEngine.Random.Range(0, mejoresColores.Count)];
+}
+
+void JugarCartaIA(GameObject carta)
+{
+    carta.transform.SetParent(pilaDescarte);
+    carta.transform.localPosition = Vector3.zero;
+    carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
+    ordenPila++;
+    cartasManoIA.Remove(carta);
+
+    MostrarDebug($"🤖 IA ha jugado una carta {carta.GetComponent<Carta>().color}_{carta.GetComponent<Carta>().numero}.");
+}
 
 
-        bool EsCartaValida(Carta cartaSeleccionada)
+    
+
+    bool EsCartaValida(Carta cartaSeleccionada)
         {
             if (cartaSeleccionada.color == "wild")
             {
@@ -515,28 +569,7 @@
                 sr.color = (i == cartaSeleccionada) ? new Color(0.7f, 0.7f, 0.7f, 1f) : Color.white;
             }
         }
-        string ElegirMejorColorIA()
-        {
-            Dictionary<string, int> contadorColores = new Dictionary<string, int>()
-            {
-                { "Red", 0 },
-                { "Blue", 0 },
-                { "Green", 0 },
-                { "Yellow", 0 }
-            };
-
-            foreach (GameObject carta in cartasManoIA)
-            {
-                Carta cartaScript = carta.GetComponent<Carta>();
-                if (contadorColores.ContainsKey(cartaScript.color))
-                {
-                    contadorColores[cartaScript.color]++;
-                }
-            }
-
-            string mejorColor = contadorColores.Aggregate((x, y) => x.Value > y.Value ? x : y).Key;
-            return mejorColor;
-        }
+        
     public void CambiarTurno(bool turnoExtra = false)
     {
         // Si hay un turno extra, el mismo jugador juega de nuevo
