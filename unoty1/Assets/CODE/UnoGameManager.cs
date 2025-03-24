@@ -286,6 +286,9 @@ using System.Collections;
         cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasManoJugador.Count - 1);
         ActualizarSeleccion();
 
+        // 🔹 Verificar si al jugador le queda una sola carta
+        VerificarCartasJugador();
+
         // 🃏 Si la carta es Wild, abrir la selección de color
         if (cartaSeleccionadaScript.color == "wild")
         {
@@ -305,8 +308,17 @@ using System.Collections;
         CambiarTurno();  // 🔄 Pasar el turno si no es Skip ni Reverse
     }
 
+  
 
 
+
+    void VerificarCartasJugador()
+    {
+        if (cartasManoJugador.Count == 1)
+        {
+            MostrarDebug("⚠️ ¡Te queda solo UNA carta! Juega sabiamente. 🃏");
+        }
+    }
 
 
     public void SeleccionarColorRojo()
@@ -504,19 +516,25 @@ using System.Collections;
     return mejoresColores[UnityEngine.Random.Range(0, mejoresColores.Count)];
 }
 
-void JugarCartaIA(GameObject carta)
-{
-    carta.transform.SetParent(pilaDescarte);
-    carta.transform.localPosition = Vector3.zero;
-    carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
-    ordenPila++;
-    cartasManoIA.Remove(carta);
+    void JugarCartaIA(GameObject carta)
+    {
+        carta.transform.SetParent(pilaDescarte);
+        carta.transform.localPosition = Vector3.zero;
+        carta.GetComponent<SpriteRenderer>().sortingOrder = 100 + ordenPila;
+        ordenPila++;
+        cartasManoIA.Remove(carta);
 
-    MostrarDebug($"🤖 IA ha jugado una carta {carta.GetComponent<Carta>().color}_{carta.GetComponent<Carta>().numero}.");
-}
+        MostrarDebug($"🤖 IA ha jugado una carta {carta.GetComponent<Carta>().color}_{carta.GetComponent<Carta>().numero}.");
+
+        // 🔹 Verificar si a la IA le queda una sola carta
+        if (cartasManoIA.Count == 1)
+        {
+            MostrarDebug("⚠️ ¡A la IA le queda solo UNA carta! 🃏");
+        }
+    }
 
 
-    
+
 
     bool EsCartaValida(Carta cartaSeleccionada)
         {
