@@ -3,6 +3,8 @@
     using TMPro;
     using System.Linq;
 using System.Collections;
+using UnityEngine.SceneManagement;
+
 
 
     public class UnoGameManager : MonoBehaviour
@@ -31,6 +33,9 @@ using System.Collections;
         private float radioAbanico = 3.5f;
         private float anguloSeparacion = 15f;
         private const int MAX_CARTAS = 15;
+        public GameObject winScreen;
+        public GameObject loseScreen;
+    public UnoGameManager gameUI;
 
 
 
@@ -44,11 +49,11 @@ using System.Collections;
         MostrarDebug("🎮 ¡Juego Iniciado!");
 
         panelSeleccionColor.SetActive(false);  // 🔹 Ocultar panel al inicio
+        
+
     }
 
-
-
-
+   
     public void MostrarDebug(string mensaje)
         {
             if (debugTexto != null)
@@ -99,33 +104,46 @@ using System.Collections;
         }
 
 
-        public void GenerarCartaInicial()
+    public void GenerarCartaInicial()
+    {
+        if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
+
+        string[] cartasProhibidas = { "Blue_Draw", "Red_Draw", "Green_Draw", "Yellow_Draw",
+                                   "Red_Reverse", "Green_Reverse", "Yellow_Reverse", "Blue_Reverse",
+                                   "Red_Skip", "Blue_Skip", "Yellow_Skip", "Green_Skip",
+                                   "Wild", "WildDraw" };
+
+        Sprite spriteAleatorio;
+        string nombreCarta;
+
+        do
         {
-            if (spritesCartas.Count == 0 || cartaBasePrefab == null) return;
-
             int indice = Random.Range(0, spritesCartas.Count);
-            Sprite spriteAleatorio = spritesCartas[indice];
+            spriteAleatorio = spritesCartas[indice];
+            nombreCarta = spriteAleatorio.name;
+        } while (cartasProhibidas.Contains(nombreCarta)); // Asegura que no sea una carta prohibida
 
-            GameObject cartaInicial = Instantiate(cartaBasePrefab, pilaDescarte);
-            cartaInicial.transform.position = new Vector3(-19, 5, 0); // Colocar en el centro del tablero
+        GameObject cartaInicial = Instantiate(cartaBasePrefab, pilaDescarte);
+        cartaInicial.transform.position = new Vector3(-19, 5, 0); // Colocar en el centro del tablero
 
-            SpriteRenderer sr = cartaInicial.GetComponent<SpriteRenderer>();
-            if (sr != null)
-            {
-                sr.sprite = spriteAleatorio;
-                sr.sortingOrder = 1; // Asegurar que quede por debajo de las demás cartas
-            }
-
-            Carta cartaScript = cartaInicial.GetComponent<Carta>();
-            if (cartaScript != null)
-            {
-                string[] parts = spriteAleatorio.name.Split('_');
-                cartaScript.color = parts[0];
-                cartaScript.numero = parts.Length > 1 ? parts[1] : null;
-            }
+        SpriteRenderer sr = cartaInicial.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.sprite = spriteAleatorio;
+            sr.sortingOrder = 1; // Asegurar que quede por debajo de las demás cartas
         }
 
-        void RepartirCartasIniciales()
+        Carta cartaScript = cartaInicial.GetComponent<Carta>();
+        if (cartaScript != null)
+        {
+            string[] parts = nombreCarta.Split('_');
+            cartaScript.color = parts[0];
+            cartaScript.numero = parts.Length > 1 ? parts[1] : null;
+        }
+    }
+
+
+    void RepartirCartasIniciales()
         {
             for (int i = 0; i < 7; i++)
             {
@@ -192,9 +210,10 @@ using System.Collections;
             if (cartasManoIA.Count >= MAX_CARTAS) return;
 
             GenerarCarta(manoIA, cartasManoIA);
+            ReorganizarCartasEnAbanico(cartasManoIA);
 
-            // 🛠 Verifica si la IA ahora puede jugar
-            if (TieneCartaJugable(cartasManoIA))
+        // 🛠 Verifica si la IA ahora puede jugar
+        if (TieneCartaJugable(cartasManoIA))
             {
                 MostrarDebug("🤖 La IA ha robado una carta jugable.");
             }
@@ -286,15 +305,15 @@ using System.Collections;
         cartaSeleccionada = Mathf.Clamp(cartaSeleccionada, 0, cartasManoJugador.Count - 1);
         ActualizarSeleccion();
 
-        // 🔹 Verificar si al jugador le queda una sola carta
-        VerificarCartasJugador();
+        // 🔹 Verificar si el jugador ha ganado
+        VerificarGanador();
 
         // 🃏 Si la carta es Wild, abrir la selección de color
         if (cartaSeleccionadaScript.color == "wild")
         {
             MostrarDebug("🎨 Elige un color para continuar.");
             panelSeleccionColor.SetActive(true);
-            return;  // ⛔ No cambiar turno hasta que el jugador elija color
+            return;
         }
 
         // ✅ Si la carta es Skip o Reverse, permitir que el jugador juegue otra carta
@@ -308,15 +327,30 @@ using System.Collections;
         CambiarTurno();  // 🔄 Pasar el turno si no es Skip ni Reverse
     }
 
-  
 
 
+
+    void VerificarGanador()
+    {
+        if (cartasManoJugador.Count == 0)
+        {
+            
+            Debug.Log("🏆 ¡Felicidades! Ganaste la partida.");
+            return;
+        }
+
+        if (cartasManoIA.Count == 0)
+        {
+            Debug.Log("💀 La IA ha ganado la partida. ¡Inténtalo de nuevo!");
+            return;
+        }
+    }
 
     void VerificarCartasJugador()
     {
         if (cartasManoJugador.Count == 1)
         {
-            MostrarDebug("⚠️ ¡Te queda solo UNA carta! Juega sabiamente. 🃏");
+            Debug.Log("⚠️ ¡Te queda solo UNA carta! Juega sabiamente. 🃏");
         }
     }
 
@@ -457,9 +491,9 @@ using System.Collections;
 
         // 🔹 Si no tiene cartas jugables NI Wild, entonces roba una carta
         MostrarDebug("🤖 La IA no tiene carta jugable y robará una.");
-        RobarCartaIA(); // ✅ Se llama sin asignarla a una variable
+        RobarCartaIA(); 
 
-        // 🔹 Intentar jugar la carta robada inmediatamente
+        
         foreach (GameObject carta in cartasManoIA)
         {
             Carta cartaScript = carta.GetComponent<Carta>();
@@ -467,11 +501,10 @@ using System.Collections;
             {
                 JugarCartaIA(carta);
 
-                // 🛑 Si la carta robada es Skip o Reverse, repetir turno
                 if (cartaScript.numero == "Skip" || cartaScript.numero == "Reverse")
                 {
                     MostrarDebug("🤖 La IA te ha cancelado el turno y volverá a jugar.");
-                    TurnoIA(); // 🔥 La IA vuelve a jugar
+                    TurnoIA(); 
                     return;
                 }
 
@@ -480,12 +513,12 @@ using System.Collections;
             }
         }
 
-        // 🔹 Si después de robar aún no tiene jugada, pasa el turno
+        
         CambiarTurno();
     }
 
 
-    // 🃏 La IA elige el mejor color basado en sus cartas
+    
     string ElegirMejorColorIA()
 {
     Dictionary<string, int> contadorColores = new Dictionary<string, int>()
@@ -496,7 +529,7 @@ using System.Collections;
         { "Yellow", 0 }
     };
 
-    // Contar cuántas cartas tiene de cada color
+   
     foreach (GameObject carta in cartasManoIA)
     {
         Carta cartaScript = carta.GetComponent<Carta>();
@@ -506,7 +539,7 @@ using System.Collections;
         }
     }
 
-    // 🏆 Elegir el color con más cartas; si hay empate, elegir uno al azar
+   
     int maxCantidad = contadorColores.Values.Max();
     List<string> mejoresColores = contadorColores
         .Where(c => c.Value == maxCantidad)
@@ -526,12 +559,15 @@ using System.Collections;
 
         MostrarDebug($"🤖 IA ha jugado una carta {carta.GetComponent<Carta>().color}_{carta.GetComponent<Carta>().numero}.");
 
-        // 🔹 Verificar si a la IA le queda una sola carta
+        
+        VerificarGanador();
+
         if (cartasManoIA.Count == 1)
         {
-            MostrarDebug("⚠️ ¡A la IA le queda solo UNA carta! 🃏");
+            Debug.Log("⚠️ ¡A la IA le queda solo UNA carta! 🃏");
         }
     }
+
 
 
 
@@ -602,7 +638,7 @@ using System.Collections;
             }
             else
             {
-                // Si es la IA, hacemos que juegue otra vez inmediatamente
+ 
                 Invoke("TurnoIA", 1.0f);
                 return;
             }
@@ -614,7 +650,7 @@ using System.Collections;
         if (!esTurnoJugador)
         {
             MostrarDebug("🤖 Turno de la IA.");
-            Invoke("TurnoIA", 1.0f); // Esperar 1 segundo antes de que la IA juegue
+            Invoke("TurnoIA", 1.0f); 
         }
         else
         {
