@@ -18,6 +18,7 @@ using UnityEngine.SceneManagement;
         private MenuSeleccionColor menuSeleccionColor;
         public TextMeshProUGUI debugTexto;
         public GameObject panelSeleccionColor;
+    public GameObject botonVolverMenu;
 
 
 
@@ -53,6 +54,7 @@ using UnityEngine.SceneManagement;
         panelSeleccionColor.SetActive(false);  // 🔹 Ocultar panel al inicio
         panelGanaste.SetActive(false);
         panelPerdiste.SetActive(false);
+
 
 
 
@@ -147,7 +149,11 @@ using UnityEngine.SceneManagement;
         }
     }
 
-
+    public void VolverAlMenuPrincipal()
+    {
+        // Cargar la escena principal
+        SceneManager.LoadScene("inicio");
+    }
     void RepartirCartasIniciales()
         {
             for (int i = 0; i < 7; i++)
@@ -197,13 +203,15 @@ using UnityEngine.SceneManagement;
         // 🔄 Si no puede jugar, cambiar turno a la IA
         CambiarTurno();
     }
-
+   
+   
     void VerificarGanador()
     {
         if (cartasManoJugador.Count == 0)
         {
             MostrarDebug("🏆 ¡Felicidades! Ganaste la partida.");
-            panelGanaste.SetActive(true); // Mostrar pantalla de ganaste
+            panelGanaste.SetActive(true);
+            botonVolverMenu.SetActive(true); // Mostrar botón de volver al menú
             Time.timeScale = 0f; // Detener el juego
             return;
         }
@@ -211,7 +219,8 @@ using UnityEngine.SceneManagement;
         if (cartasManoIA.Count == 0)
         {
             MostrarDebug("💀 La IA ha ganado la partida. ¡Inténtalo de nuevo!");
-            panelPerdiste.SetActive(true); // Mostrar pantalla de perdiste
+            panelPerdiste.SetActive(true);
+            botonVolverMenu.SetActive(true); // Mostrar botón de volver al menú
             Time.timeScale = 0f; // Detener el juego
             return;
         }
@@ -221,6 +230,7 @@ using UnityEngine.SceneManagement;
         {
             MostrarDebug("❌ Has perdido, tienes 15 cartas.");
             panelPerdiste.SetActive(true); // Mostrar pantalla de perdiste
+            botonVolverMenu.SetActive(true);
             Time.timeScale = 0f; // Detener el juego
             return;
         }
@@ -230,6 +240,7 @@ using UnityEngine.SceneManagement;
         {
             MostrarDebug("🏆 La IA ha ganado porque tiene 15 cartas.");
             panelGanaste.SetActive(true); // Mostrar pantalla de ganaste
+            botonVolverMenu.SetActive(true);
             Time.timeScale = 0f; // Detener el juego
             return;
         }
