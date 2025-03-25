@@ -1,27 +1,56 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;  // Necesario para manejar las escenas
 
-public class MainMenu : MonoBehaviour
+public class Botones : MonoBehaviour
 {
-    // Métodos públicos para asignar a los botones desde el Inspector
+    public UnoGameManager unoManager;
+    // Referencia al script UnoManager (asegúrate de asignarlo en el Inspector)
+    public Button botonJugar;  // Botón para jugar la carta
+    public Button botonRobar;  // Botón para robar carta
+    public Button botonSalir;  // Botón para salir del juego
+    public Button botonNuevoJuego;  // Botón para iniciar un nuevo juego
 
-    // Método para cargar la escena del juego
-    public void StartGame()
+    void Start()
     {
-        SceneManager.LoadScene("tablero"); // Cambia "GameScene" al nombre exacto de tu escena del juego
+        if (botonJugar != null)
+            botonJugar.onClick.AddListener(JugarCarta);
+
+        if (botonRobar != null)
+            botonRobar.onClick.AddListener(RobarCarta);
+
+        if (botonSalir != null)
+            botonSalir.onClick.AddListener(SalirDelJuego);
+
+        if (botonNuevoJuego != null)
+            botonNuevoJuego.onClick.AddListener(IniciarNuevoJuego);
     }
 
-    // Método para la funcionalidad "Continue"
-    public void ContinueGame()
+    void JugarCarta()
     {
-        Debug.Log("La funcionalidad 'Continue' está pendiente de implementación.");
+        if (unoManager != null)
+        {
+            unoManager.JugarCartaJugador();  // Usa el nuevo nombre correcto
+        }
     }
 
-    // Método para salir del juego
-    public void ExitGame()
+    void RobarCarta()
+    {
+        if (unoManager != null)
+        {
+            unoManager.RobarCartaJugador();  // Usa el nuevo nombre correcto
+        }
+    }
+
+    void SalirDelJuego()
     {
         Debug.Log("Saliendo del juego...");
         Application.Quit();
+    }
+
+    void IniciarNuevoJuego()
+    {
+        Debug.Log("Iniciando nuevo juego...");
+        SceneManager.LoadScene("tablero");
     }
 }
