@@ -33,9 +33,11 @@ using UnityEngine.SceneManagement;
         private float radioAbanico = 3.5f;
         private float anguloSeparacion = 15f;
         private const int MAX_CARTAS = 15;
-        public GameObject winScreen;
-        public GameObject loseScreen;
-    public UnoGameManager gameUI;
+        public GameObject panelGanaste; // Panel de victoria
+        public GameObject panelPerdiste; // Panel de derrota
+
+
+
 
 
 
@@ -49,11 +51,14 @@ using UnityEngine.SceneManagement;
         MostrarDebug("🎮 ¡Juego Iniciado!");
 
         panelSeleccionColor.SetActive(false);  // 🔹 Ocultar panel al inicio
-        
+        panelGanaste.SetActive(false);
+        panelPerdiste.SetActive(false);
+
+
 
     }
 
-   
+
     public void MostrarDebug(string mensaje)
         {
             if (debugTexto != null)
@@ -193,6 +198,42 @@ using UnityEngine.SceneManagement;
         CambiarTurno();
     }
 
+    void VerificarGanador()
+    {
+        if (cartasManoJugador.Count == 0)
+        {
+            MostrarDebug("🏆 ¡Felicidades! Ganaste la partida.");
+            panelGanaste.SetActive(true); // Mostrar pantalla de ganaste
+            Time.timeScale = 0f; // Detener el juego
+            return;
+        }
+
+        if (cartasManoIA.Count == 0)
+        {
+            MostrarDebug("💀 La IA ha ganado la partida. ¡Inténtalo de nuevo!");
+            panelPerdiste.SetActive(true); // Mostrar pantalla de perdiste
+            Time.timeScale = 0f; // Detener el juego
+            return;
+        }
+
+        // Comprobar si el jugador tiene 15 cartas
+        if (cartasManoJugador.Count == 15)
+        {
+            MostrarDebug("❌ Has perdido, tienes 15 cartas.");
+            panelPerdiste.SetActive(true); // Mostrar pantalla de perdiste
+            Time.timeScale = 0f; // Detener el juego
+            return;
+        }
+
+        // Comprobar si la IA tiene 15 cartas
+        if (cartasManoIA.Count == 15)
+        {
+            MostrarDebug("🏆 La IA ha ganado porque tiene 15 cartas.");
+            panelGanaste.SetActive(true); // Mostrar pantalla de ganaste
+            Time.timeScale = 0f; // Detener el juego
+            return;
+        }
+    }
 
 
 
@@ -330,21 +371,8 @@ using UnityEngine.SceneManagement;
 
 
 
-    void VerificarGanador()
-    {
-        if (cartasManoJugador.Count == 0)
-        {
-            
-            Debug.Log("🏆 ¡Felicidades! Ganaste la partida.");
-            return;
-        }
-
-        if (cartasManoIA.Count == 0)
-        {
-            Debug.Log("💀 La IA ha ganado la partida. ¡Inténtalo de nuevo!");
-            return;
-        }
-    }
+   
+    
 
     void VerificarCartasJugador()
     {
